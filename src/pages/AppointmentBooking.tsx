@@ -1,211 +1,297 @@
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { Calendar, Clock, User, ArrowLeft } from 'lucide-react';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Textarea } from '@/components/ui/textarea';
+import { useAuth } from '@/contexts/AuthContext';
+import { useLanguage } from '@/contexts/LanguageContext';
 import { useNavigate } from 'react-router-dom';
-import { toast } from 'sonner';
+import { Calendar, Clock, ArrowLeft, User, Phone, FileText } from 'lucide-react';
+import { supabase } from '@/integrations/supabase/client';
+import { useToast } from '@/hooks/use-toast';
+import { format } from 'date-fns';
+
+interface Appointment {
+  id: string;
+  appointment_date: string;
+  appointment_time: string;
+  appointment_type: string;
+  status: string;
+  notes?: string;
+  doctor_id?: string;
+  queue_number?: number;
+}
 
 const AppointmentBooking = () => {
+  const { profile } = useAuth();
+  const { t } = useLanguage();
   const navigate = useNavigate();
+  const { toast } = useToast();
+  
+  const [appointments, setAppointments] = useState<Appointment[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [showBookingForm, setShowBookingForm] = useState(false);
   const [formData, setFormData] = useState({
-    patientName: '',
-    phone: '',
     appointmentDate: '',
     appointmentTime: '',
     appointmentType: 'consultation',
-    chiefComplaint: ''
+    notes: ''
   });
 
-  const timeSlots = [
-    '09:00', '09:30', '10:00', '10:30', '11:00', '11:30',
-    '14:00', '14:30', '15:00', '15:30', '16:00', '16:30'
-  ];
+  useEffect(() => {
+    fetchAppointments();
+  }, [profile?.id]);
 
-  const appointmentTypes = [
-    { value: 'consultation', label: 'सामान्य सलाह | General Consultation' },
-    { value: 'followup', label: 'फॉलो-अप | Follow-up' },
-    { value: 'emergency', label: 'आपातकाल | Emergency' },
-    { value: 'vaccination', label: 'टीकाकरण | Vaccination' }
-  ];
+  const fetchAppointments = async () => {
+    if (!profile?.id) return;
+    
+    try {
+      const { data, error } = await supabase
+        .from('appointments')
+        .select('*')
+        .eq('patient_id', profile.id)
+        .order('appointment_date', { ascending: true });
 
-  const handleSubmit = (e: React.FormEvent) => {
-    e.preventDefault();
-    // Here you would typically submit to Supabase
-    toast.success('अपॉइंटमेंट बुक हो गई! | Appointment booked successfully!');
-    navigate('/dashboard');
+      if (error) {
+        console.error('Error fetching appointments:', error);
+        toast({
+          title: "Error",
+          description: "Failed to fetch appointments",
+          variant: "destructive"
+        });
+      } else {
+        setAppointments(data || []);
+      }
+    } catch (error) {
+      console.error('Error:', error);
+    } finally {
+      setLoading(false);
+    }
   };
+
+  const handleBookAppointment = async (e: React.FormEvent) => {
+    e.preventDefault();
+    
+    if (!profile?.id) return;
+
+    try {
+      const { error } = await supabase
+        .from('appointments')
+        .insert({
+          patient_id: profile.id,
+          appointment_date: formData.appointmentDate,
+          appointment_time: formData.appointmentTime,
+          appointment_type: formData.appointmentType,
+          notes: formData.notes,
+          status: 'scheduled'
+        });
+
+      if (error) {
+        console.error('Error booking appointment:', error);
+        toast({
+          title: "Error",
+          description: "Failed to book appointment",
+          variant: "destructive"
+        });
+      } else {
+        toast({
+          title: "Success",
+          description: "Appointment booked successfully",
+        });
+        setFormData({
+          appointmentDate: '',
+          appointmentTime: '',
+          appointmentType: 'consultation',
+          notes: ''
+        });
+        setShowBookingForm(false);
+        fetchAppointments();
+      }
+    } catch (error) {
+      console.error('Error:', error);
+    }
+  };
+
+  const getStatusColor = (status: string) => {
+    switch (status) {
+      case 'scheduled': return 'bg-blue-100 text-blue-800';
+      case 'completed': return 'bg-green-100 text-green-800';
+      case 'cancelled': return 'bg-red-100 text-red-800';
+      case 'in_progress': return 'bg-yellow-100 text-yellow-800';
+      default: return 'bg-gray-100 text-gray-800';
+    }
+  };
+
+  if (loading) {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-blue-50 to-green-50 flex items-center justify-center">
+        <div className="animate-spin rounded-full h-32 w-32 border-b-2 border-blue-600"></div>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-blue-50 to-green-50 p-6">
       <div className="max-w-4xl mx-auto">
-        <div className="flex items-center gap-4 mb-8">
-          <Button variant="outline" onClick={() => navigate('/dashboard')}>
+        {/* Header */}
+        <div className="flex items-center gap-4 mb-6">
+          <Button variant="outline" onClick={() => navigate('/dashboard')} className="flex items-center gap-2">
             <ArrowLeft className="h-4 w-4" />
+            {t('back')}
           </Button>
           <div>
-            <h1 className="text-3xl font-bold text-gray-800">अपॉइंटमेंट बुक करें</h1>
-            <p className="text-gray-600">Book Your Appointment</p>
+            <h1 className="text-3xl font-bold text-gray-800">{t('appointments')}</h1>
+            <p className="text-gray-600">{t('manageAppointments')}</p>
           </div>
         </div>
 
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-          <div className="lg:col-span-2">
-            <Card>
-              <CardHeader>
-                <CardTitle className="flex items-center gap-2">
-                  <Calendar className="h-5 w-5" />
-                  अपॉइंटमेंट विवरण | Appointment Details
-                </CardTitle>
-                <CardDescription>
-                  कृपया सभी आवश्यक जानकारी भरें | Please fill all required information
-                </CardDescription>
-              </CardHeader>
-              <CardContent>
-                <form onSubmit={handleSubmit} className="space-y-6">
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    <div className="space-y-2">
-                      <Label htmlFor="patientName">मरीज़ का नाम | Patient Name</Label>
-                      <Input
-                        id="patientName"
-                        placeholder="Enter patient name"
-                        value={formData.patientName}
-                        onChange={(e) => setFormData({...formData, patientName: e.target.value})}
-                        required
-                      />
-                    </div>
-                    <div className="space-y-2">
-                      <Label htmlFor="phone">फोन नंबर | Phone Number</Label>
-                      <Input
-                        id="phone"
-                        type="tel"
-                        placeholder="+91 XXXXX XXXXX"
-                        value={formData.phone}
-                        onChange={(e) => setFormData({...formData, phone: e.target.value})}
-                        required
-                      />
-                    </div>
-                  </div>
+        {/* Book New Appointment Button */}
+        <div className="mb-6">
+          <Button 
+            onClick={() => setShowBookingForm(!showBookingForm)}
+            className="flex items-center gap-2"
+          >
+            <Calendar className="h-4 w-4" />
+            {showBookingForm ? 'Hide Form' : t('bookNewAppointment')}
+          </Button>
+        </div>
 
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    <div className="space-y-2">
-                      <Label htmlFor="appointmentDate">तारीख | Date</Label>
-                      <Input
-                        id="appointmentDate"
-                        type="date"
-                        value={formData.appointmentDate}
-                        onChange={(e) => setFormData({...formData, appointmentDate: e.target.value})}
-                        min={new Date().toISOString().split('T')[0]}
-                        required
-                      />
-                    </div>
-                    <div className="space-y-2">
-                      <Label htmlFor="appointmentType">प्रकार | Type</Label>
-                      <select
-                        id="appointmentType"
-                        className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                        value={formData.appointmentType}
-                        onChange={(e) => setFormData({...formData, appointmentType: e.target.value})}
-                      >
-                        {appointmentTypes.map((type) => (
-                          <option key={type.value} value={type.value}>
-                            {type.label}
-                          </option>
-                        ))}
-                      </select>
-                    </div>
-                  </div>
-
-                  <div className="space-y-2">
-                    <Label>समय चुनें | Select Time</Label>
-                    <div className="grid grid-cols-3 md:grid-cols-6 gap-2">
-                      {timeSlots.map((time) => (
-                        <Button
-                          key={time}
-                          type="button"
-                          variant={formData.appointmentTime === time ? "default" : "outline"}
-                          onClick={() => setFormData({...formData, appointmentTime: time})}
-                          className="text-sm"
-                        >
-                          {time}
-                        </Button>
-                      ))}
-                    </div>
-                  </div>
-
-                  <div className="space-y-2">
-                    <Label htmlFor="chiefComplaint">मुख्य समस्या | Chief Complaint</Label>
-                    <textarea
-                      id="chiefComplaint"
-                      placeholder="Describe your main health concern..."
-                      className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                      rows={3}
-                      value={formData.chiefComplaint}
-                      onChange={(e) => setFormData({...formData, chiefComplaint: e.target.value})}
+        {/* Booking Form */}
+        {showBookingForm && (
+          <Card className="mb-6">
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <Calendar className="h-5 w-5" />
+                {t('bookNewAppointment')}
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              <form onSubmit={handleBookAppointment} className="space-y-4">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div>
+                    <Label htmlFor="appointmentDate">{t('appointmentDate')}</Label>
+                    <Input
+                      id="appointmentDate"
+                      type="date"
+                      value={formData.appointmentDate}
+                      onChange={(e) => setFormData({ ...formData, appointmentDate: e.target.value })}
+                      required
+                      min={new Date().toISOString().split('T')[0]}
                     />
                   </div>
-
-                  <Button type="submit" className="w-full">
-                    अपॉइंटमेंट बुक करें | Book Appointment
-                  </Button>
-                </form>
-              </CardContent>
-            </Card>
-          </div>
-
-          <div className="space-y-6">
-            <Card>
-              <CardHeader>
-                <CardTitle className="flex items-center gap-2">
-                  <Clock className="h-5 w-5" />
-                  PHC समय | PHC Hours
-                </CardTitle>
-              </CardHeader>
-              <CardContent>
-                <div className="space-y-2 text-sm">
-                  <div className="flex justify-between">
-                    <span>सोमवार - शुक्रवार</span>
-                    <span>9:00 AM - 5:00 PM</span>
-                  </div>
-                  <div className="flex justify-between">
-                    <span>शनिवार</span>
-                    <span>9:00 AM - 1:00 PM</span>
-                  </div>
-                  <div className="flex justify-between">
-                    <span>रविवार</span>
-                    <span>बंद | Closed</span>
+                  <div>
+                    <Label htmlFor="appointmentTime">{t('appointmentTime')}</Label>
+                    <Input
+                      id="appointmentTime"
+                      type="time"
+                      value={formData.appointmentTime}
+                      onChange={(e) => setFormData({ ...formData, appointmentTime: e.target.value })}
+                      required
+                    />
                   </div>
                 </div>
-              </CardContent>
-            </Card>
-
-            <Card>
-              <CardHeader>
-                <CardTitle className="flex items-center gap-2">
-                  <User className="h-5 w-5" />
-                  उपलब्ध डॉक्टर | Available Doctors
-                </CardTitle>
-              </CardHeader>
-              <CardContent>
-                <div className="space-y-3">
-                  <div className="p-3 border rounded-lg">
-                    <p className="font-medium">Dr. Raj Kumar</p>
-                    <p className="text-sm text-gray-600">सामान्य चिकित्सा | General Medicine</p>
-                  </div>
-                  <div className="p-3 border rounded-lg">
-                    <p className="font-medium">Dr. Priya Sharma</p>
-                    <p className="text-sm text-gray-600">स्त्री रोग | Gynecology</p>
-                  </div>
-                  <div className="p-3 border rounded-lg">
-                    <p className="font-medium">Dr. Suresh Patel</p>
-                    <p className="text-sm text-gray-600">बाल रोग | Pediatrics</p>
-                  </div>
+                <div>
+                  <Label htmlFor="appointmentType">{t('appointmentType')}</Label>
+                  <Select value={formData.appointmentType} onValueChange={(value) => setFormData({ ...formData, appointmentType: value })}>
+                    <SelectTrigger>
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="consultation">Consultation</SelectItem>
+                      <SelectItem value="follow_up">Follow-up</SelectItem>
+                      <SelectItem value="emergency">Emergency</SelectItem>
+                      <SelectItem value="vaccination">Vaccination</SelectItem>
+                    </SelectContent>
+                  </Select>
                 </div>
+                <div>
+                  <Label htmlFor="notes">{t('notes')} (Optional)</Label>
+                  <Textarea
+                    id="notes"
+                    value={formData.notes}
+                    onChange={(e) => setFormData({ ...formData, notes: e.target.value })}
+                    placeholder="Any additional notes or symptoms..."
+                  />
+                </div>
+                <Button type="submit" className="w-full">
+                  {t('bookAppointment')}
+                </Button>
+              </form>
+            </CardContent>
+          </Card>
+        )}
+
+        {/* Appointments List */}
+        <div className="space-y-4">
+          <h2 className="text-2xl font-semibold text-gray-800 flex items-center gap-2">
+            <Clock className="h-6 w-6" />
+            {t('yourAppointments')} ({appointments.length})
+          </h2>
+          
+          {appointments.length === 0 ? (
+            <Card>
+              <CardContent className="text-center py-8">
+                <Calendar className="h-12 w-12 text-gray-400 mx-auto mb-4" />
+                <p className="text-gray-600">No appointments found</p>
+                <p className="text-sm text-gray-500">Book your first appointment to get started</p>
               </CardContent>
             </Card>
-          </div>
+          ) : (
+            appointments.map((appointment) => (
+              <Card key={appointment.id} className="hover:shadow-md transition-shadow">
+                <CardContent className="p-6">
+                  <div className="flex justify-between items-start mb-4">
+                    <div className="flex items-center gap-3">
+                      <div className="bg-blue-100 p-2 rounded-lg">
+                        <Calendar className="h-5 w-5 text-blue-600" />
+                      </div>
+                      <div>
+                        <h3 className="font-semibold text-lg capitalize">
+                          {appointment.appointment_type.replace('_', ' ')}
+                        </h3>
+                        <p className="text-gray-600">
+                          {format(new Date(appointment.appointment_date), 'PPP')} at {appointment.appointment_time}
+                        </p>
+                      </div>
+                    </div>
+                    <span className={`px-3 py-1 rounded-full text-sm font-medium ${getStatusColor(appointment.status)}`}>
+                      {appointment.status.replace('_', ' ')}
+                    </span>
+                  </div>
+                  
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm">
+                    {appointment.queue_number && (
+                      <div className="flex items-center gap-2">
+                        <User className="h-4 w-4 text-gray-500" />
+                        <span>Queue Number: {appointment.queue_number}</span>
+                      </div>
+                    )}
+                    {appointment.doctor_id && (
+                      <div className="flex items-center gap-2">
+                        <User className="h-4 w-4 text-gray-500" />
+                        <span>Doctor ID: {appointment.doctor_id}</span>
+                      </div>
+                    )}
+                  </div>
+                  
+                  {appointment.notes && (
+                    <div className="mt-4 p-3 bg-gray-50 rounded-lg">
+                      <div className="flex items-start gap-2">
+                        <FileText className="h-4 w-4 text-gray-500 mt-0.5" />
+                        <div>
+                          <p className="text-sm font-medium text-gray-700">Notes:</p>
+                          <p className="text-sm text-gray-600">{appointment.notes}</p>
+                        </div>
+                      </div>
+                    </div>
+                  )}
+                </CardContent>
+              </Card>
+            ))
+          )}
         </div>
       </div>
     </div>
