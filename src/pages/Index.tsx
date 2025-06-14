@@ -24,31 +24,33 @@ export default function Index() {
           </ul>
           <nav className="space-y-3 flex flex-col">
             <Link
-              to="/login"
+              to="/auth"
               className="block w-full text-lg font-bold bg-blue-600 hover:-translate-y-[2px] hover:shadow-xl hover:bg-blue-700/90 transition-all duration-200 text-white py-3 px-6 rounded-xl text-center shadow-md"
             >
-              User/PHC Staff Login
+              Login / Sign Up
             </Link>
             <Link
-              to="/phcdashboard"
+              to="/auth"
               className="block w-full text-lg font-bold bg-teal-600 hover:-translate-y-[2px] hover:shadow-xl hover:bg-teal-700/90 transition-all duration-200 text-white py-3 px-6 rounded-xl text-center shadow-md"
             >
-              PHC Staff Dashboard Demo
+              PHC Staff Login
             </Link>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+              <Link
+                to="/auth"
+                className="block w-full text-sm font-bold bg-yellow-500 hover:-translate-y-[2px] hover:shadow-xl hover:bg-yellow-600/90 transition-all duration-200 text-white py-2 px-4 rounded-xl text-center shadow-md"
+              >
+                Queue Manager
+              </Link>
+              <Link
+                to="/auth"
+                className="block w-full text-sm font-bold bg-green-600 hover:-translate-y-[2px] hover:shadow-xl hover:bg-green-700/90 transition-all duration-200 text-white py-2 px-4 rounded-xl text-center shadow-md"
+              >
+                HealthBot (AI)
+              </Link>
+            </div>
             <Link
-              to="/queuemanager"
-              className="block w-full text-lg font-bold bg-yellow-500 hover:-translate-y-[2px] hover:shadow-xl hover:bg-yellow-600/90 transition-all duration-200 text-white py-3 px-6 rounded-xl text-center shadow-md"
-            >
-              Queue Manager
-            </Link>
-            <Link
-              to="/healthbot"
-              className="block w-full text-lg font-bold bg-green-600 hover:-translate-y-[2px] hover:shadow-xl hover:bg-green-700/90 transition-all duration-200 text-white py-3 px-6 rounded-xl text-center shadow-md"
-            >
-              HealthBot (AI Assistant)
-            </Link>
-            <Link
-              to="/resourcefinder"
+              to="/auth"
               className="block w-full text-lg font-bold bg-purple-600 hover:-translate-y-[2px] hover:shadow-xl hover:bg-purple-700/90 transition-all duration-200 text-white py-3 px-6 rounded-xl text-center shadow-md"
             >
               Resource Finder

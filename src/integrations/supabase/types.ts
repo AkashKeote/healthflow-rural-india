@@ -330,6 +330,57 @@ export type Database = {
           },
         ]
       }
+      profiles: {
+        Row: {
+          aadhaar: string
+          address: string | null
+          created_at: string | null
+          date_of_birth: string | null
+          email: string | null
+          emergency_contact: string | null
+          gender: string | null
+          id: string
+          name: string
+          phc_name: string | null
+          phone: string
+          updated_at: string | null
+          user_type: string
+          village: string | null
+        }
+        Insert: {
+          aadhaar: string
+          address?: string | null
+          created_at?: string | null
+          date_of_birth?: string | null
+          email?: string | null
+          emergency_contact?: string | null
+          gender?: string | null
+          id: string
+          name: string
+          phc_name?: string | null
+          phone: string
+          updated_at?: string | null
+          user_type?: string
+          village?: string | null
+        }
+        Update: {
+          aadhaar?: string
+          address?: string | null
+          created_at?: string | null
+          date_of_birth?: string | null
+          email?: string | null
+          emergency_contact?: string | null
+          gender?: string | null
+          id?: string
+          name?: string
+          phc_name?: string | null
+          phone?: string
+          updated_at?: string | null
+          user_type?: string
+          village?: string | null
+        }
+        Relationships: []
+      }
       queue_management: {
         Row: {
           actual_wait_time: number | null
