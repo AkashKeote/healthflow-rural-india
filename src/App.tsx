@@ -13,6 +13,9 @@ import PHCDashboard from "./pages/PHCDashboard";
 import QueueManager from "./pages/QueueManager";
 import HealthBot from "./pages/HealthBot";
 import ResourceFinder from "./pages/ResourceFinder";
+import AppointmentBooking from "./pages/AppointmentBooking";
+import HealthRecords from "./pages/HealthRecords";
+import FamilyHealth from "./pages/FamilyHealth";
 import ProtectedRoute from "./components/ProtectedRoute";
 
 const queryClient = new QueryClient();
@@ -55,6 +58,16 @@ const AppRoutes = () => {
       <Route path="/resourcefinder" element={
         <ProtectedRoute>
           <ResourceFinder />
+        </ProtectedRoute>
+      } />
+      <Route path="/appointments" element={
+        <ProtectedRoute>
+          <AppointmentBooking />
+        </ProtectedRoute>
+      } />
+      <Route path="/health-records" element={
+        <ProtectedRoute>
+          <HealthRecords />
         </ProtectedRoute>
       } />
       <Route path="*" element={<NotFound />} />
