@@ -70,6 +70,11 @@ const AppRoutes = () => {
           <HealthRecords />
         </ProtectedRoute>
       } />
+      <Route path="/family-health" element={
+        <ProtectedRoute>
+          <FamilyHealth />
+        </ProtectedRoute>
+      } />
       <Route path="*" element={<NotFound />} />
     </Routes>
   );

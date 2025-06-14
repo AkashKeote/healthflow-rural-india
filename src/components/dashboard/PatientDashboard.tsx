@@ -144,7 +144,7 @@ const PatientDashboard = () => {
                     <p className="text-sm text-gray-500">1 सप्ताह पहले</p>
                   </div>
                 </div>
-                <Button variant="outline" className="w-full">
+                <Button variant="outline" className="w-full" onClick={() => navigate('/health-records')}>
                   सभी रिकॉर्ड देखें | View All Records
                 </Button>
               </div>
@@ -184,7 +184,7 @@ const PatientDashboard = () => {
                     </div>
                   </div>
                 </div>
-                <Button variant="outline" className="w-full">
+                <Button variant="outline" className="w-full" onClick={() => navigate('/appointments')}>
                   सभी अपॉइंटमेंट्स देखें | View All Appointments
                 </Button>
               </div>

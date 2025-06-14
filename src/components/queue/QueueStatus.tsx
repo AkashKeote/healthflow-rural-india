@@ -2,10 +2,18 @@
 import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Clock, Users, CheckCircle, AlertCircle } from 'lucide-react';
+import { Input } from '@/components/ui/input';
+import { Clock, Users, CheckCircle, AlertCircle, Plus } from 'lucide-react';
+import { toast } from 'sonner';
 
 const QueueStatus = () => {
   const [currentTime, setCurrentTime] = useState(new Date());
+  const [showTokenForm, setShowTokenForm] = useState(false);
+  const [tokenForm, setTokenForm] = useState({
+    name: '',
+    phone: '',
+    type: 'सामान्य जांच'
+  });
 
   useEffect(() => {
     const timer = setInterval(() => setCurrentTime(new Date()), 1000);
@@ -51,6 +59,22 @@ const QueueStatus = () => {
       case 'completed': return 'पूर्ण | Completed';
       default: return status;
     }
+  };
+
+  const handleGetNewToken = () => {
+    if (!tokenForm.name || !tokenForm.phone) {
+      toast.error('कृपया सभी फील्ड भरें | Please fill all fields');
+      return;
+    }
+    
+    const newTokenNumber = `T${String(queueData.length + 1).padStart(3, '0')}`;
+    toast.success(`नया टोकन मिला: ${newTokenNumber} | New token received: ${newTokenNumber}`);
+    setShowTokenForm(false);
+    setTokenForm({ name: '', phone: '', type: 'सामान्य जांच' });
+  };
+
+  const handleUpdateTime = () => {
+    toast.success('समय अपडेट हो गया | Time updated successfully');
   };
 
   return (
@@ -112,6 +136,47 @@ const QueueStatus = () => {
         </Card>
       </div>
 
+      {/* New Token Form */}
+      {showTokenForm && (
+        <Card className="mb-6">
+          <CardHeader>
+            <CardTitle>नया टोकन लें | Get New Token</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+              <Input
+                placeholder="नाम | Name"
+                value={tokenForm.name}
+                onChange={(e) => setTokenForm({...tokenForm, name: e.target.value})}
+              />
+              <Input
+                placeholder="फोन नंबर | Phone"
+                value={tokenForm.phone}
+                onChange={(e) => setTokenForm({...tokenForm, phone: e.target.value})}
+              />
+              <select
+                className="px-3 py-2 border border-gray-300 rounded-md"
+                value={tokenForm.type}
+                onChange={(e) => setTokenForm({...tokenForm, type: e.target.value})}
+              >
+                <option value="सामान्य जांच">सामान्य जांच | General Checkup</option>
+                <option value="फॉलो-अप">फॉलो-अप | Follow-up</option>
+                <option value="टीकाकरण">टीकाकरण | Vaccination</option>
+                <option value="रक्त जांच">रक्त जांच | Blood Test</option>
+              </select>
+            </div>
+            <div className="flex gap-2 mt-4">
+              <Button onClick={handleGetNewToken}>
+                टोकन प्राप्त करें | Get Token
+              </Button>
+              <Button variant="outline" onClick={() => setShowTokenForm(false)}>
+                रद्द करें | Cancel
+              </Button>
+            </div>
+          </CardContent>
+        </Card>
+      )}
+
       {/* Queue List */}
       <Card>
         <CardHeader>
@@ -162,11 +227,18 @@ const QueueStatus = () => {
 
           <div className="mt-6 pt-6 border-t">
             <div className="flex justify-center gap-4">
-              <Button className="flex items-center gap-2">
-                <Users className="h-4 w-4" />
+              <Button 
+                className="flex items-center gap-2"
+                onClick={() => setShowTokenForm(true)}
+              >
+                <Plus className="h-4 w-4" />
                 नया टोकन लें | Get New Token
               </Button>
-              <Button variant="outline" className="flex items-center gap-2">
+              <Button 
+                variant="outline" 
+                className="flex items-center gap-2"
+                onClick={handleUpdateTime}
+              >
                 <Clock className="h-4 w-4" />
                 समय अपडेट करें | Update Time
               </Button>

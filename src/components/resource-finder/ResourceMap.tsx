@@ -1,13 +1,14 @@
-
 import React, { useState } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { MapPin, Phone, Clock, Star, Search, Filter } from 'lucide-react';
+import AddResourceForm from './AddResourceForm';
 
 const ResourceMap = () => {
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedCategory, setSelectedCategory] = useState('all');
+  const [showAddForm, setShowAddForm] = useState(false);
 
   const healthResources = [
     {
@@ -117,6 +118,10 @@ const ResourceMap = () => {
       default: return 'bg-gray-100 text-gray-800';
     }
   };
+
+  if (showAddForm) {
+    return <AddResourceForm onClose={() => setShowAddForm(false)} />;
+  }
 
   return (
     <div className="max-w-6xl mx-auto space-y-6">
@@ -257,7 +262,7 @@ const ResourceMap = () => {
             <p className="text-sm text-gray-600 mb-4">
               अपने क्षेत्र में कोई स्वास्थ्य संसाधन जोड़ने में मदद करें
             </p>
-            <Button>
+            <Button onClick={() => setShowAddForm(true)}>
               संसाधन जोड़ें | Add Resource
             </Button>
           </div>
