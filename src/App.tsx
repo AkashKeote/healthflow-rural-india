@@ -13,6 +13,7 @@ import Dashboard from "./pages/Dashboard";
 import PHCDashboard from "./pages/PHCDashboard";
 import QueueManager from "./pages/QueueManager";
 import HealthBot from "./pages/HealthBot";
+import StandaloneHealthBot from "./pages/StandaloneHealthBot";
 import ResourceFinder from "./pages/ResourceFinder";
 import AppointmentBooking from "./pages/AppointmentBooking";
 import HealthRecords from "./pages/HealthRecords";
@@ -36,6 +37,7 @@ const AppRoutes = () => {
     <Routes>
       <Route path="/" element={user ? <Navigate to="/dashboard" replace /> : <Index />} />
       <Route path="/auth" element={user ? <Navigate to="/dashboard" replace /> : <AuthPage />} />
+      <Route path="/standalone-healthbot" element={<StandaloneHealthBot />} />
       <Route path="/dashboard" element={
         <ProtectedRoute>
           <Dashboard />
