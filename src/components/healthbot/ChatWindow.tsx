@@ -34,56 +34,83 @@ const ChatWindow = () => {
     setLoading(true);
 
     try {
-      console.log('Sending message to chatbot:', currentInput);
+      console.log('Attempting to connect to chatbot API...');
+      console.log('Request payload:', { message: currentInput, language: 'multi' });
+      
+      // Try the API call with additional headers and timeout
+      const controller = new AbortController();
+      const timeoutId = setTimeout(() => controller.abort(), 10000); // 10 second timeout
       
       const response = await fetch('https://chatbot-xi-kohl.vercel.app/api/chat', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
           'Accept': 'application/json',
+          'Origin': window.location.origin,
+          'Access-Control-Allow-Origin': '*',
         },
-        mode: 'cors',
+        signal: controller.signal,
         body: JSON.stringify({
           message: currentInput,
           language: 'multi'
         }),
       });
 
-      console.log('Response status:', response.status);
-      console.log('Response headers:', response.headers);
+      clearTimeout(timeoutId);
+      console.log('Response received:', response.status, response.statusText);
 
       if (!response.ok) {
-        throw new Error(`HTTP error! status: ${response.status}`);
+        throw new Error(`HTTP error! status: ${response.status} - ${response.statusText}`);
       }
 
-      const data = await response.json();
+      const contentType = response.headers.get('content-type');
+      console.log('Response content type:', contentType);
+      
+      let data;
+      if (contentType && contentType.includes('application/json')) {
+        data = await response.json();
+      } else {
+        data = await response.text();
+      }
+      
       console.log('Chatbot response data:', data);
       
       let botResponse = "मुझे खुशी है कि आपने प्रश्न पूछा। कृपया अधिक विस्तार से बताएं या निकटतम PHC से संपर्क करें। | I'm glad you asked. Please provide more details or contact your nearest PHC.";
       
-      if (data.response) {
-        botResponse = data.response;
-      } else if (data.message) {
-        botResponse = data.message;
-      } else if (data.reply) {
-        botResponse = data.reply;
-      } else if (typeof data === 'string') {
+      if (typeof data === 'string') {
         botResponse = data;
+      } else if (data && typeof data === 'object') {
+        botResponse = data.response || data.message || data.reply || data.answer || JSON.stringify(data);
       }
       
       setMessages((msgs) => [
         ...msgs,
         { from: "bot", text: botResponse, timestamp: new Date() }
       ]);
-    } catch (error) {
-      console.error('Error calling chatbot API:', error);
       
-      // Provide a more helpful error message based on the error type
+    } catch (error) {
+      console.error('Detailed error info:', error);
+      
       let errorMessage = "क्षमा करें, चैटबॉट सेवा अभी उपलब्ध नहीं है। | Sorry, the chatbot service is currently unavailable.";
       
-      if (error instanceof TypeError && error.message === 'Failed to fetch') {
-        errorMessage = "कनेक्शन की समस्या है। कृपया अपना इंटरनेट कनेक्शन जांचें। | Connection issue. Please check your internet connection.";
+      if (error instanceof Error) {
+        console.log('Error name:', error.name);
+        console.log('Error message:', error.message);
+        
+        if (error.name === 'AbortError') {
+          errorMessage = "अनुरोध का समय समाप्त हो गया। कृपया फिर से कोशिश करें। | Request timed out. Please try again.";
+        } else if (error.message === 'Failed to fetch') {
+          errorMessage = "कनेक्शन की समस्या है। कृपया अपना इंटरनेट कनेक्शन जांचें या बाद में कोशिश करें। | Connection issue. Please check your internet connection or try later.";
+        } else if (error.message.includes('CORS')) {
+          errorMessage = "सर्वर कनेक्शन की समस्या है। | Server connection issue.";
+        }
       }
+      
+      // Add a test message to check if the API is reachable
+      console.log('Testing API connectivity...');
+      fetch('https://chatbot-xi-kohl.vercel.app/api/chat', { method: 'HEAD' })
+        .then(response => console.log('HEAD request result:', response.status))
+        .catch(headError => console.log('HEAD request failed:', headError));
       
       setMessages((msgs) => [
         ...msgs,
