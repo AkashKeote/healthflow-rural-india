@@ -2,7 +2,9 @@
 import React, { useState } from "react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
 import { MessageCircle, Send, Mic, Volume2 } from 'lucide-react';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 
 const ChatWindow = () => {
   const [messages, setMessages] = useState([
@@ -14,6 +16,8 @@ const ChatWindow = () => {
   ]);
   const [input, setInput] = useState("");
   const [loading, setLoading] = useState(false);
+  const [selectedModel, setSelectedModel] = useState("gemini");
+  const [backendUrl, setBackendUrl] = useState("");
 
   const healthQuestions = [
     "मुझे बुखार है, क्या करूं? | I have fever, what to do?",
@@ -27,6 +31,11 @@ const ChatWindow = () => {
     e.preventDefault();
     if (!input.trim()) return;
 
+    if (!backendUrl.trim()) {
+      alert("कृपया अपना Flask backend URL enter करें | Please enter your Flask backend URL");
+      return;
+    }
+
     const userMsg = { from: "user", text: input, timestamp: new Date() };
     setMessages((msgs) => [...msgs, userMsg]);
     const currentInput = input;
@@ -34,54 +43,31 @@ const ChatWindow = () => {
     setLoading(true);
 
     try {
-      console.log('Attempting to connect to chatbot API...');
-      console.log('Request payload:', { message: currentInput, language: 'multi' });
+      console.log('Connecting to Flask backend at:', backendUrl);
+      console.log('Request payload:', { message: currentInput, bot: selectedModel });
       
-      // Try the API call with additional headers and timeout
-      const controller = new AbortController();
-      const timeoutId = setTimeout(() => controller.abort(), 10000); // 10 second timeout
-      
-      const response = await fetch('https://chatbot-xi-kohl.vercel.app/api/chat', {
+      const response = await fetch(`${backendUrl}/chat`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
           'Accept': 'application/json',
-          'Origin': window.location.origin,
-          'Access-Control-Allow-Origin': '*',
         },
-        signal: controller.signal,
         body: JSON.stringify({
           message: currentInput,
-          language: 'multi'
+          bot: selectedModel
         }),
       });
 
-      clearTimeout(timeoutId);
       console.log('Response received:', response.status, response.statusText);
 
       if (!response.ok) {
         throw new Error(`HTTP error! status: ${response.status} - ${response.statusText}`);
       }
 
-      const contentType = response.headers.get('content-type');
-      console.log('Response content type:', contentType);
+      const data = await response.json();
+      console.log('Backend response data:', data);
       
-      let data;
-      if (contentType && contentType.includes('application/json')) {
-        data = await response.json();
-      } else {
-        data = await response.text();
-      }
-      
-      console.log('Chatbot response data:', data);
-      
-      let botResponse = "मुझे खुशी है कि आपने प्रश्न पूछा। कृपया अधिक विस्तार से बताएं या निकटतम PHC से संपर्क करें। | I'm glad you asked. Please provide more details or contact your nearest PHC.";
-      
-      if (typeof data === 'string') {
-        botResponse = data;
-      } else if (data && typeof data === 'object') {
-        botResponse = data.response || data.message || data.reply || data.answer || JSON.stringify(data);
-      }
+      const botResponse = data.response || "मुझे खुशी है कि आपने प्रश्न पूछा। कृपया अधिक विस्तार से बताएं। | I'm glad you asked. Please provide more details.";
       
       setMessages((msgs) => [
         ...msgs,
@@ -89,28 +75,17 @@ const ChatWindow = () => {
       ]);
       
     } catch (error) {
-      console.error('Detailed error info:', error);
+      console.error('Error connecting to Flask backend:', error);
       
-      let errorMessage = "क्षमा करें, चैटबॉट सेवा अभी उपलब्ध नहीं है। | Sorry, the chatbot service is currently unavailable.";
+      let errorMessage = "Flask backend से कनेक्शन नहीं हो पा रहा। कृपया URL और server status चेक करें। | Unable to connect to Flask backend. Please check URL and server status.";
       
       if (error instanceof Error) {
-        console.log('Error name:', error.name);
-        console.log('Error message:', error.message);
-        
-        if (error.name === 'AbortError') {
-          errorMessage = "अनुरोध का समय समाप्त हो गया। कृपया फिर से कोशिश करें। | Request timed out. Please try again.";
-        } else if (error.message === 'Failed to fetch') {
-          errorMessage = "कनेक्शन की समस्या है। कृपया अपना इंटरनेट कनेक्शन जांचें या बाद में कोशिश करें। | Connection issue. Please check your internet connection or try later.";
+        if (error.message === 'Failed to fetch') {
+          errorMessage = "Backend server नहीं चल रहा या गलत URL है। | Backend server is not running or wrong URL.";
         } else if (error.message.includes('CORS')) {
-          errorMessage = "सर्वर कनेक्शन की समस्या है। | Server connection issue.";
+          errorMessage = "CORS error: Flask में CORS properly configure करें। | CORS error: Please configure CORS properly in Flask.";
         }
       }
-      
-      // Add a test message to check if the API is reachable
-      console.log('Testing API connectivity...');
-      fetch('https://chatbot-xi-kohl.vercel.app/api/chat', { method: 'HEAD' })
-        .then(response => console.log('HEAD request result:', response.status))
-        .catch(headError => console.log('HEAD request failed:', headError));
       
       setMessages((msgs) => [
         ...msgs,
@@ -139,9 +114,43 @@ const ChatWindow = () => {
             स्वास्थ्य बॉट | HealthBot – AI FAQ & Triage Assistant
           </CardTitle>
           <CardDescription>
-            AI-powered multilingual health assistant for rural communities
+            AI-powered multilingual health assistant powered by your Flask backend
           </CardDescription>
         </CardHeader>
+      </Card>
+
+      {/* Backend Configuration */}
+      <Card>
+        <CardHeader>
+          <CardTitle className="text-lg">Backend Configuration</CardTitle>
+        </CardHeader>
+        <CardContent className="space-y-4">
+          <div>
+            <label className="block text-sm font-medium mb-2">
+              Flask Backend URL:
+            </label>
+            <Input
+              value={backendUrl}
+              onChange={(e) => setBackendUrl(e.target.value)}
+              placeholder="http://localhost:5000 या आपका backend URL"
+              className="w-full"
+            />
+          </div>
+          <div>
+            <label className="block text-sm font-medium mb-2">
+              AI Model:
+            </label>
+            <Select value={selectedModel} onValueChange={setSelectedModel}>
+              <SelectTrigger>
+                <SelectValue placeholder="Select model" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="gemini">Gemini</SelectItem>
+                <SelectItem value="chatgpt">DeepSeek</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
+        </CardContent>
       </Card>
 
       {/* Quick Questions */}
