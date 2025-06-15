@@ -1,0 +1,91 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>HealthBot - AI FAQ & Triage Assistant</title>
+    <link rel="stylesheet" href="healthbot.css">
+</head>
+<body>
+    <div class="container">
+        <!-- Header -->
+        <div class="header-card">
+            <div class="header-content">
+                <h1 class="header-title">
+                    <span class="icon">💬</span>
+                    स्वास्थ्य बॉट | HealthBot – AI FAQ & Triage Assistant
+                </h1>
+                <p class="header-description">
+                    AI-powered multilingual health assistant for rural communities
+                </p>
+            </div>
+        </div>
+
+        <!-- Quick Questions -->
+        <div class="quick-questions-card">
+            <h2 class="card-title">त्वरित प्रश्न | Quick Questions</h2>
+            <div class="quick-questions-grid">
+                <button class="quick-question-btn" onclick="selectQuickQuestion(this.textContent)">
+                    मुझे बुखार है, क्या करूं? | I have fever, what to do?
+                </button>
+                <button class="quick-question-btn" onclick="selectQuickQuestion(this.textContent)">
+                    बच्चों के टीकाकरण की जानकारी | Information about child vaccination
+                </button>
+                <button class="quick-question-btn" onclick="selectQuickQuestion(this.textContent)">
+                    पेट दर्द के लिए घरेलू उपाय | Home remedies for stomach pain
+                </button>
+                <button class="quick-question-btn" onclick="selectQuickQuestion(this.textContent)">
+                    मधुमेह के लक्षण क्या हैं? | What are diabetes symptoms?
+                </button>
+                <button class="quick-question-btn" onclick="selectQuickQuestion(this.textContent)">
+                    उच्च रक्तचाप का इलाज | Treatment for high blood pressure
+                </button>
+            </div>
+        </div>
+
+        <!-- Chatbot Interface -->
+        <div id="chatbot">
+            <div id="chatbot-header" onclick="toggleChatbot()">
+                <h2>HealthBot Chat</h2>
+                <span id="toggle-icon">▼</span>
+            </div>
+
+            <div id="chatbot-content">
+                <label for="model-choice">Choose a Model:</label>
+                <select id="model-choice">
+                    <option value="gemini">Gemini</option>
+                    <option value="chatgpt">DeepSeek</option>
+                </select>
+
+                <div id="chat-window">
+                    <div class="message bot-message">
+                        <div class="message-content">
+                            <p>नमस्ते! मैं आपकी स्वास्थ्य सहायक हूं। आप हिंदी, अंग्रेजी या मैथिली में प्रश्न पूछ सकते हैं। | Hello! I'm your health assistant. You can ask questions in Hindi, English, or Maithili.</p>
+                            <span class="timestamp" id="initial-timestamp"></span>
+                            <button class="speak-btn" onclick="speakMessage(this)" title="Listen">🔊</button>
+                        </div>
+                    </div>
+                </div>
+
+                <div id="chatbot-input-area">
+                    <button id="mic-btn" onclick="toggleMicrophone()" title="Voice Input">🎤</button>
+                    <textarea id="user-input" rows="3" placeholder="स्वास्थ्य संबंधी प्रश्न पूछें... | Ask a health question..."></textarea>
+                    <button id="send-btn" onclick="sendMessage()">Send</button>
+                </div>
+
+                <div class="input-footer">
+                    <p>🎤 Voice support • 🌐 Multilingual • ⚠️ For medical emergencies, call 108</p>
+                </div>
+            </div>
+        </div>
+
+        <!-- Disclaimer -->
+        <div class="disclaimer-card">
+            <p><strong>अस्वीकरण | Disclaimer:</strong> यह केवल सामान्य जानकारी के लिए है। गंभीर स्वास्थ्य समस्याओं के लिए डॉक्टर से मिलें। | This is for general information only. For serious health issues, consult a doctor.</p>
+        </div>
+    </div>
+
+    <script src="healthbot.js"></script>
+</body>
+</html>
