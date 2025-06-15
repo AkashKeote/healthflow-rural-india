@@ -17,7 +17,6 @@ const ChatWindow = () => {
   const [input, setInput] = useState("");
   const [loading, setLoading] = useState(false);
   const [selectedModel, setSelectedModel] = useState("gemini");
-  const [backendUrl, setBackendUrl] = useState("");
 
   const healthQuestions = [
     "मुझे बुखार है, क्या करूं? | I have fever, what to do?",
@@ -31,11 +30,6 @@ const ChatWindow = () => {
     e.preventDefault();
     if (!input.trim()) return;
 
-    if (!backendUrl.trim()) {
-      alert("कृपया अपना Flask backend URL enter करें | Please enter your Flask backend URL");
-      return;
-    }
-
     const userMsg = { from: "user", text: input, timestamp: new Date() };
     setMessages((msgs) => [...msgs, userMsg]);
     const currentInput = input;
@@ -43,10 +37,10 @@ const ChatWindow = () => {
     setLoading(true);
 
     try {
-      console.log('Connecting to Flask backend at:', backendUrl);
+      console.log('Connecting to backend at: https://akashkeote.vercel.app');
       console.log('Request payload:', { message: currentInput, bot: selectedModel });
       
-      const response = await fetch(`${backendUrl}/chat`, {
+      const response = await fetch('https://akashkeote.vercel.app/chat', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -75,15 +69,15 @@ const ChatWindow = () => {
       ]);
       
     } catch (error) {
-      console.error('Error connecting to Flask backend:', error);
+      console.error('Error connecting to backend:', error);
       
-      let errorMessage = "Flask backend से कनेक्शन नहीं हो पा रहा। कृपया URL और server status चेक करें। | Unable to connect to Flask backend. Please check URL and server status.";
+      let errorMessage = "Backend से कनेक्शन नहीं हो पा रहा। कृपया बाद में कोशिश करें। | Unable to connect to backend. Please try again later.";
       
       if (error instanceof Error) {
         if (error.message === 'Failed to fetch') {
-          errorMessage = "Backend server नहीं चल रहा या गलत URL है। | Backend server is not running or wrong URL.";
+          errorMessage = "Backend server नहीं चल रहा या network issue है। | Backend server is not running or network issue.";
         } else if (error.message.includes('CORS')) {
-          errorMessage = "CORS error: Flask में CORS properly configure करें। | CORS error: Please configure CORS properly in Flask.";
+          errorMessage = "CORS error: Backend में CORS properly configure करें। | CORS error: Please configure CORS properly in backend.";
         }
       }
       
@@ -114,28 +108,17 @@ const ChatWindow = () => {
             स्वास्थ्य बॉट | HealthBot – AI FAQ & Triage Assistant
           </CardTitle>
           <CardDescription>
-            AI-powered multilingual health assistant powered by your Flask backend
+            AI-powered multilingual health assistant powered by akashkeote.vercel.app
           </CardDescription>
         </CardHeader>
       </Card>
 
-      {/* Backend Configuration */}
+      {/* Model Selection */}
       <Card>
         <CardHeader>
-          <CardTitle className="text-lg">Backend Configuration</CardTitle>
+          <CardTitle className="text-lg">AI Model Selection</CardTitle>
         </CardHeader>
-        <CardContent className="space-y-4">
-          <div>
-            <label className="block text-sm font-medium mb-2">
-              Flask Backend URL:
-            </label>
-            <Input
-              value={backendUrl}
-              onChange={(e) => setBackendUrl(e.target.value)}
-              placeholder="http://localhost:5000 या आपका backend URL"
-              className="w-full"
-            />
-          </div>
+        <CardContent>
           <div>
             <label className="block text-sm font-medium mb-2">
               AI Model:
