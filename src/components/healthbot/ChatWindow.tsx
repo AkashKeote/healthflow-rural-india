@@ -23,46 +23,54 @@ const ChatWindow = () => {
     "उच्च रक्तचाप का इलाज | Treatment for high blood pressure"
   ];
 
-  const botResponses = {
-    "fever": "बुखार के लिए: 1) पर्याप्त आराम करें 2) तरल पदार्थ लें 3) पैरासिटामोल ले सकते हैं 4) यदि 3 दिन से ज्यादा बुखार हो तो डॉक्टर से मिलें | For fever: Rest, drink fluids, take paracetamol if needed. See doctor if fever persists over 3 days.",
-    "vaccination": "बच्चों के लिए आवश्यक टीके: BCG, DPT, पोलियो, MMR, हेपेटाइटिस B। समय पर टीकाकरण बहुत जरूरी है। | Essential vaccines for children: BCG, DPT, Polio, MMR, Hepatitis B. Timely vaccination is crucial.",
-    "stomach": "पेट दर्द के घरेलू उपाय: 1) अजवाइन का पानी 2) पुदीना की चाय 3) हल्का भोजन 4) गर्म पानी की बोतल से सेक | Home remedies for stomach pain: Ajwain water, mint tea, light food, warm compress.",
-    "diabetes": "मधुमेह के लक्षण: बार-बार पेशाब, अधिक प्यास, वजन कम होना, थकान। जांच कराएं और डॉक्टर की सलाह लें। | Diabetes symptoms: frequent urination, excessive thirst, weight loss, fatigue. Get tested and consult doctor.",
-    "bp": "उच्च रक्तचाप: नमक कम करें, नियमित व्यायाम, तनाव कम करें, दवा समय पर लें। | High BP: reduce salt, regular exercise, reduce stress, take medicines on time."
-  };
-
   const handleSend = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!input.trim()) return;
 
     const userMsg = { from: "user", text: input, timestamp: new Date() };
     setMessages((msgs) => [...msgs, userMsg]);
+    const currentInput = input;
     setInput("");
     setLoading(true);
 
-    // Simulate AI response based on keywords
-    setTimeout(() => {
-      let response = "मुझे खुशी है कि आपने प्रश्न पूछा। कृपया अधिक विस्तार से बताएं या निकटतम PHC से संपर्क करें। | I'm glad you asked. Please provide more details or contact your nearest PHC.";
-      
-      const lowerInput = input.toLowerCase();
-      if (lowerInput.includes("fever") || lowerInput.includes("बुखार")) {
-        response = botResponses.fever;
-      } else if (lowerInput.includes("vaccination") || lowerInput.includes("टीका")) {
-        response = botResponses.vaccination;
-      } else if (lowerInput.includes("stomach") || lowerInput.includes("पेट")) {
-        response = botResponses.stomach;
-      } else if (lowerInput.includes("diabetes") || lowerInput.includes("मधुमेह")) {
-        response = botResponses.diabetes;
-      } else if (lowerInput.includes("bp") || lowerInput.includes("रक्तचाप")) {
-        response = botResponses.bp;
+    try {
+      const response = await fetch('https://chatbot-xi-kohl.vercel.app/api/chat', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          message: currentInput,
+          language: 'multi' // Supporting multilingual as mentioned
+        }),
+      });
+
+      if (!response.ok) {
+        throw new Error(`HTTP error! status: ${response.status}`);
       }
 
+      const data = await response.json();
+      console.log('Chatbot response:', data);
+      
+      const botResponse = data.response || data.message || "मुझे खुशी है कि आपने प्रश्न पूछा। कृपया अधिक विस्तार से बताएं या निकटतम PHC से संपर्क करें। | I'm glad you asked. Please provide more details or contact your nearest PHC.";
+      
       setMessages((msgs) => [
         ...msgs,
-        { from: "bot", text: response, timestamp: new Date() }
+        { from: "bot", text: botResponse, timestamp: new Date() }
       ]);
+    } catch (error) {
+      console.error('Error calling chatbot API:', error);
+      setMessages((msgs) => [
+        ...msgs,
+        { 
+          from: "bot", 
+          text: "क्षमा करें, मुझे कुछ तकनीकी समस्या आ रही है। कृपया फिर से कोशिश करें। | Sorry, I'm experiencing some technical issues. Please try again.", 
+          timestamp: new Date() 
+        }
+      ]);
+    } finally {
       setLoading(false);
-    }, 1200);
+    }
   };
 
   const handleQuickQuestion = (question: string) => {
