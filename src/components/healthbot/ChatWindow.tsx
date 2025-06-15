@@ -34,25 +34,42 @@ const ChatWindow = () => {
     setLoading(true);
 
     try {
+      console.log('Sending message to chatbot:', currentInput);
+      
       const response = await fetch('https://chatbot-xi-kohl.vercel.app/api/chat', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
+          'Accept': 'application/json',
         },
+        mode: 'cors',
         body: JSON.stringify({
           message: currentInput,
-          language: 'multi' // Supporting multilingual as mentioned
+          language: 'multi'
         }),
       });
+
+      console.log('Response status:', response.status);
+      console.log('Response headers:', response.headers);
 
       if (!response.ok) {
         throw new Error(`HTTP error! status: ${response.status}`);
       }
 
       const data = await response.json();
-      console.log('Chatbot response:', data);
+      console.log('Chatbot response data:', data);
       
-      const botResponse = data.response || data.message || "मुझे खुशी है कि आपने प्रश्न पूछा। कृपया अधिक विस्तार से बताएं या निकटतम PHC से संपर्क करें। | I'm glad you asked. Please provide more details or contact your nearest PHC.";
+      let botResponse = "मुझे खुशी है कि आपने प्रश्न पूछा। कृपया अधिक विस्तार से बताएं या निकटतम PHC से संपर्क करें। | I'm glad you asked. Please provide more details or contact your nearest PHC.";
+      
+      if (data.response) {
+        botResponse = data.response;
+      } else if (data.message) {
+        botResponse = data.message;
+      } else if (data.reply) {
+        botResponse = data.reply;
+      } else if (typeof data === 'string') {
+        botResponse = data;
+      }
       
       setMessages((msgs) => [
         ...msgs,
@@ -60,11 +77,19 @@ const ChatWindow = () => {
       ]);
     } catch (error) {
       console.error('Error calling chatbot API:', error);
+      
+      // Provide a more helpful error message based on the error type
+      let errorMessage = "क्षमा करें, चैटबॉट सेवा अभी उपलब्ध नहीं है। | Sorry, the chatbot service is currently unavailable.";
+      
+      if (error instanceof TypeError && error.message === 'Failed to fetch') {
+        errorMessage = "कनेक्शन की समस्या है। कृपया अपना इंटरनेट कनेक्शन जांचें। | Connection issue. Please check your internet connection.";
+      }
+      
       setMessages((msgs) => [
         ...msgs,
         { 
           from: "bot", 
-          text: "क्षमा करें, मुझे कुछ तकनीकी समस्या आ रही है। कृपया फिर से कोशिश करें। | Sorry, I'm experiencing some technical issues. Please try again.", 
+          text: errorMessage, 
           timestamp: new Date() 
         }
       ]);
